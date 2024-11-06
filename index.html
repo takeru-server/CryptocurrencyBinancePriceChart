@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta charset="UTF-8">
+	<title>暗号資産価格チャート</title>
+	<!-- Chart.jsと関連ライブラリを読み込み -->
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial/dist/chartjs-chart-financial.min.js"></script>
+	<!-- HTTPリクエストライブラリAxiosを読み込み -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js"></script>
+	<!-- Google Fontを読み込み -->
+	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+	<!-- BootstrapのCSSを読み込み -->
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<style>
+		body {
+			font-family: 'Poppins', sans-serif;
+			background-color: #f5f7fa;
+			color: #333;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			padding: 20px;
+		}
+		#group {
+			width: 90%;
+			max-width: 1200px;
+			margin: 20px auto;
+			/*background-color: #ffffff;*/
+			border-radius: 10px;
+			box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+			padding: 20px;
+		}
+		#chart {
+			max-width: 100%;
+			max-height: 600px;
+			background-color: #f9f9f9;
+			border-radius: 8px;
+		}
+		.select-wrapper {
+			display: flex;
+			gap: 10px;
+			margin-bottom: 20px;
+		}
+		select {
+			padding: 10px;
+			border-radius: 5px;
+			border: 1px solid #ccc;
+			font-size: 16px;
+			appearance: none;
+			background-color: #fff;
+			width: 100%;
+			box-sizing: border-box;
+		}
+		select::-ms-expand { /* IE, Edge */
+			display: none;
+		}
+		h1 {
+			font-weight: 600;
+			color: #007bff;
+			margin-bottom: 20px;
+		}
+	</style>
+</head>
+<body>
+	<div id="group">
+		<h1 id="chart-title">暗号資産価格チャート</h1>
+		<div class="select-wrapper">
+			<select id="symbol-select" class="form-select">
+				<option value="ADAUSDT">Cardano (ADA)</option>
+				<option value="AVAXUSDT">Avalanche (AVAX)</option>
+				<option value="BCHUSDT">Bitcoin Cash (BCH)</option>
+				<option value="BNBUSDT">Binance Coin (BNB)</option>
+				<option value="BTCUSDT" selected>Bitcoin (BTC)</option>	<!-- 初期値 -->
+				<option value="DOGEUSDT">Dogecoin (DOGE)</option>
+				<option value="DOTUSDT">Polkadot (DOT)</option>
+				<option value="ETHUSDT">Ethereum (ETH)</option>
+				<option value="LINKUSDT">Chainlink (LINK)</option>
+				<option value="LTCUSDT">Litecoin (LTC)</option>
+				<option value="MATICUSDT">Polygon (MATIC)</option>
+				<option value="SHIBUSDT">Shiba Inu (SHIB)</option>
+				<option value="SOLUSDT">Solana (SOL)</option>
+				<option value="UNIUSDT">Uniswap (UNI)</option>
+				<option value="XRPUSDT">Ripple (XRP)</option>
+				<!-- さらに通貨ペアを追加 -->
+			</select>
+			<select id="interval-select" class="form-select">
+				<option value="1m">1 minute</option>
+				<option value="5m">5 minutes</option>
+				<option value="15m">15 minutes</option>
+				<option value="1h">1 hour</option>
+				<option value="1d">1 day</option>
+			</select>
+		</div>
+		<!-- チャートを描画するキャンバス -->
+		<canvas id="chart"></canvas>
+	</div>
+
+	<script>
+		const binanceApiEndpoint = 'https://api.binance.com/api/v3/klines';
+		const exchangeRateApiEndpoint = 'https://api.exchangerate-api.com/v4/latest/USD';
+
+		let exchangeRate = 1;
+		let chart;
+		let currentSymbol = 'BTCUSDT';  // デフォルトの通貨ペア
+		let currentInterval = '1m';	 // デフォルトの時間間隔
+
+		/**
+		 * Binance APIからローソク足データを取得する非同期関数
+		 * @returns {Promise<Array<{x: Date, o: number, h: number, l: number, c: number}>>} ローソク足データの配列
+		 */
+		async function getCandlestickData() {
+			const endTime = Date.now();
+			
+			// 時間のコンボボックスで選択した値に対して、何時間分のデータを表示したいかをここに格納する
+			var numArray = [1, 6, 12, 48, 31 * 24];
+			// 選択されている時間のインデックスを取得
+			var selectedIndex = document.getElementById('interval-select').selectedIndex;
+			// インデックスに基づいて対応する配列の値を取得
+			var intDisplayHour = numArray[selectedIndex];
+			const startTime = endTime - 60 * 60 * 1000 * intDisplayHour; // n時間前
+
+			const url = `${binanceApiEndpoint}?symbol=${currentSymbol}&interval=${currentInterval}&startTime=${startTime}&endTime=${endTime}`;
+
+			try {
+				const response = await axios.get(url);
+				const data = response.data;
+
+				// データを整形して返す
+				return data.map(item => ({
+					x: new Date(item[0]),  // タイムスタンプ
+					o: parseFloat(item[1]),  // 始値
+					h: parseFloat(item[2]),  // 高値
+					l: parseFloat(item[3]),  // 安値
+					c: parseFloat(item[4]),  // 終値
+				}));
+			} catch (error) {
+				console.error('Error fetching data:', error);
+				return []; // エラー時は空の配列を返す
+			}
+		}
+
+		/**
+		 * 為替レートを取得する非同期関数
+		 * @returns {Promise<number>} 日本円の為替レート
+		 */
+		async function getExchangeRate() {
+			try {
+				const response = await axios.get(exchangeRateApiEndpoint);
+				return response.data.rates.JPY; // 日本円の為替レートを返す
+			} catch (error) {
+				console.error('Error fetching exchange rate:', error);
+				return 1; // エラー時はデフォルトで1を返す
+			}
+		}
+
+		/**
+		 * チャートを更新する非同期関数
+		 * @param {Chart} chart チャートオブジェクト
+		 */
+		async function updateChart(chart) {
+			const candlestickData = await getCandlestickData();
+
+			if (candlestickData.length > 0) {
+				// ドルから日本円に変換
+				const jpyData = candlestickData.map(item => ({
+					...item, // 他のプロパティをコピー
+					o: item.o * exchangeRate,
+					h: item.h * exchangeRate,
+					l: item.l * exchangeRate,
+					c: item.c * exchangeRate,
+				}));
+
+				chart.data.datasets[0].data = jpyData;
+				chart.data.datasets[0].label = `${currentSymbol.slice(0,-4)} Price (JPY)`; // ラベルを更新
+				chart.update();
+			} else {
+				console.error("No candlestick data received."); //デバッグ用
+			}
+		}
+
+		/**
+		 * チャートを初期化する関数
+		 */
+		async function initChart() {
+			const ctx = document.getElementById('chart').getContext('2d');
+
+			const chartOptions = {
+				scales: {
+						x: { type: "time", time: { unit: 'minute' },
+							grid: {
+	                            	display: true // x軸グリッドを表示
+	                        	}
+	                       },
+						y: { 
+							beginAtZero: false,
+							grid: {
+                            display: true, // y軸グリッドを表示
+                            // tick間隔を固定する場合は以下のように指定
+                            // tickInterval: 1000, // 例: 1000円間隔
+                            // callback: function(value, index, values) {
+                            //    return value.toLocaleString(); // カンマ区切りで表示
+                            //}
+                        },
+                        ticks: {
+                            // 軸ラベルに単位を追加
+                            callback: function(value, index, values) {
+                                return '¥' + value.toLocaleString();
+                            }
+                        }
+						}
+				},
+				plugins: {
+					legend: {
+						labels: {
+							font: {
+								family: "'Poppins', sans-serif",
+							}
+						}
+					}
+				},
+				barThickness: 16 // ローソク足の幅をピクセルで設定	ここでグラフの線の太さを決める
+			};
+
+			chart = new Chart(ctx, {
+				type: 'candlestick',
+				data: {
+					datasets: [{
+						label: 'Price (JPY)', // 初期ラベル
+						data: [],
+						// borderColor: '#00b050',
+						borderWidth: 1,
+						barThickness: 6,
+						/*
+						upBodyColor: '#ffe699',
+						downBodyColor: '#f4b084',
+						*/
+					}],
+				},
+				options: chartOptions
+			});
+
+			// 通貨ペアの選択変更イベント
+			const symbolSelect = document.getElementById('symbol-select');
+			symbolSelect.addEventListener('change', () => {
+				currentSymbol = symbolSelect.value;
+				updateChartTitle();
+				updateChart(chart);
+			});
+
+			// 時間間隔の選択変更イベント
+			const intervalSelect = document.getElementById('interval-select');
+			intervalSelect.addEventListener('change', () => {
+				currentInterval = intervalSelect.value;
+				updateChart(chart);
+			});
+			
+			// 初期表示
+			updateChartTitle();
+			updateChart(chart);
+			setInterval(() => updateChart(chart), 1000); // 1秒ごとに更新
+			getExchangeRate().then(rate => exchangeRate = rate);
+		}
+
+		/**
+		 * チャートのタイトルを更新する関数
+		 */
+		function updateChartTitle() {
+			const selectedOption = document.getElementById('symbol-select').selectedOptions[0];
+			const symbolText = selectedOption.text;
+			document.getElementById('chart-title').textContent = `${symbolText} Price Chart`;
+		}
+
+		// チャートの初期化
+		initChart();
+
+	</script>
+</body>
+</html>
