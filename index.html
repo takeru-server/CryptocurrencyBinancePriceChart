@@ -134,6 +134,12 @@
 			#chart {
 				max-height: 50vh;
 			}
+			
+			#time-range {
+				font-size: 10px;
+				color: #9298C1;
+				
+			}
 		}
 
 		@media (max-width: 576px) {
@@ -179,6 +185,7 @@
 		</div>
 		<!-- チャートを描画するキャンバス -->
 		<canvas id="chart"></canvas>
+		<div id="time-range"></div>
 	</div>
 
 	<script>
@@ -249,7 +256,7 @@
 			if (candlestickData.length > 0) {
 				// ドルから日本円に変換
 				const jpyData = candlestickData.map(item => ({
-					...item, // 他のプロパティをコピー
+					x: item.x, // タイムスタンプ
 					o: item.o * exchangeRate,
 					h: item.h * exchangeRate,
 					l: item.l * exchangeRate,
@@ -258,6 +265,14 @@
 
 				chart.data.datasets[0].data = jpyData;
 				chart.data.datasets[0].label = `${currentSymbol.slice(0,-4)} Price (JPY)`; // ラベルを更新
+				
+				
+				// add_start_2024年11月8日_チャートのタイトルに時間範囲を表示する
+				const startTime = new Date(jpyData[0].x);
+				const endTime = new Date(jpyData.slice(-1)[0].x);
+				document.getElementById('time-range').textContent = `期間: ${startTime.toLocaleString()} - ${endTime.toLocaleString()}`;
+				// add_end_2024年11月8日_チャートのタイトルに時間範囲を表示する
+				
 				chart.update();
 			} else {
 				console.error("No candlestick data received."); //デバッグ用
@@ -289,9 +304,30 @@
                         },
                         ticks: {
                             // 軸ラベルに単位を追加
-                            callback: function(value, index, values) {
-                                return '¥' + value.toLocaleString();
-                            }
+                            // mod_start_2024年11月8日
+                            // callback: function(value, index, values) {
+                            //     return '¥' + value.toLocaleString();
+                            // }
+                            
+                            callback: function (value, index, values) {
+					          let formattedValue;
+
+					          // 1000以上の場合は整数で表示
+					          if (value >= 1000) {
+					            formattedValue = '¥' + value.toLocaleString();
+					          
+					          // 1以上の場合は少数点以下2桁まで表示
+					          } else if (value >= 1) {
+					            formattedValue = '¥' + value.toFixed(2);
+					            
+					          // 1未満の場合は少数点以下6桁まで表示
+					          } else {
+					            formattedValue = '¥' + value.toFixed(6);
+					          }
+
+					          return formattedValue;
+					        }
+					        // mod_end_2024年11月8日
                         }
 						}
 				},
