@@ -108,6 +108,8 @@
 		@media (max-width: 959px) {
 			body{
 				/* セーフエリアとは、ノッチのある位置やタブのある高さのこと	参考：https://web-design-textbook.com/recipe/iphone-design/ */
+				padding-top: env(safe-area-inset-top);	/* セーフエリアの分だけ下にずらす */
+				padding-bottom: env(safe-area-inset-bottom);	/* セーフエリアの分だけ上にずらす */
 				padding-left: calc(env(safe-area-inset-left) + .2em);	/* セーフエリアの分だけ右にずらす */
 				padding-right: calc(env(safe-area-inset-right) + .2em);	/* セーフエリアの分だけ左にずらす */
 			}
