@@ -109,7 +109,7 @@
 			body{
 				/* セーフエリアとは、ノッチのある位置やタブのある高さのこと	参考：https://web-design-textbook.com/recipe/iphone-design/ */
 				padding-top: env(safe-area-inset-top);	/* セーフエリアの分だけ下にずらす */
-				padding-bottom: env(safe-area-inset-bottom);	/* セーフエリアの分だけ上にずらす */
+				/* padding-bottom: env(safe-area-inset-bottom); */	/* セーフエリアの分だけ上にずらす */
 				padding-left: calc(env(safe-area-inset-left) + .2em);	/* セーフエリアの分だけ右にずらす */
 				padding-right: calc(env(safe-area-inset-right) + .2em);	/* セーフエリアの分だけ左にずらす */
 			}
@@ -118,9 +118,11 @@
 				max-height: 90vh;
 			}
 			
+			/*
 			.select-wrapper {
 				margin-bottom: 10px;
 			}
+			*/
 			
 			h1 {
 				font-size: 1.5em;
@@ -146,6 +148,7 @@
 			.select-wrapper {
 				flex-direction: column;
 				gap: 5px;
+				margin-bottom: 10px;
 			}
 			select {
 				font-size: 14px;
