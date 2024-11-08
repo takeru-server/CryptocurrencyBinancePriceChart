@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<!-- スマホデザイン書き方	参考：https://web-design-textbook.com/recipe/iphone-design/ -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">	<!-- 「viewport-fit」を付けるとiPhoneで表示したときにノッチまで画面が広がるようにする -->
 	<meta charset="UTF-8">
 	<title>暗号資産価格チャート</title>
 	<!-- Chart.jsと関連ライブラリを読み込み -->
@@ -27,6 +28,7 @@
 
 	<!-- apple-touch-icon (iOS用) -->
 	<link rel="apple-touch-icon" href="apple-touch-icon.png" sizes="180x180">
+	
 	<style>
 		body {
 			font-family: 'Poppins', sans-serif;
@@ -48,14 +50,14 @@
 		#chart {
 			max-width: 100%;
 			/* max-height: 600px; */
-			max-height: 60vh; /* 高さを画面の高さに比例 */
+			/* max-height: 60vh; */ /* 高さを画面の高さに比例 */
 			background-color: #f9f9f9;
 			border-radius: 8px;
 		}
 		.select-wrapper {
 			display: flex;
 			gap: 10px;
-			margin-bottom: 20px;
+			/* margin-bottom: 20px; */
 		}
 		select {
 			padding: 10px;
@@ -84,27 +86,49 @@
 			margin-bottom: 20px;
 		}
 		
-		/* タッチパッドやPC用 */
-		@media (min-width: 850px) 
+		/* タッチパッドやPC用 960px以上の画面に対して効く */
+		@media (min-width: 960px) 
 		{
 			body {
 				padding: 20px;
 			}
+			
+			
+			.select-wrapper {
+				margin-bottom: 20px;
+			}
+			
+			#chart {
+				max-height: 60vh; /* 高さを画面の高さに比例 */
+			}
 		}
 		
 		
-		/* スマホ用のレスポンシブ調整（横画面対応） */
-		@media (max-width: 850px) {
-			#group {
-				padding: 10px;
+		/* スマホ用のレスポンシブ調整（横画面対応） 959px以下の画面に対して効く */
+		@media (max-width: 959px) {
+			body{
+				/* セーフエリアとは、ノッチのある位置やタブのある高さのこと	参考：https://web-design-textbook.com/recipe/iphone-design/ */
+				padding-left: calc(env(safe-area-inset-left) + .2em);	/* セーフエリアの分だけ右にずらす */
+				padding-right: calc(env(safe-area-inset-right) + .2em);	/* セーフエリアの分だけ左にずらす */
 			}
+			#group {
+				padding: 10px 10px 20px 10px;
+				max-height: 90vh;
+			}
+			
+			.select-wrapper {
+				margin-bottom: 10px;
+			}
+			
 			h1 {
 				font-size: 1.5em;
 			}
+			
 			select {
 				font-size: 14px;
 				padding: 8px;
 			}
+			
 			#chart {
 				max-height: 50vh;
 			}
