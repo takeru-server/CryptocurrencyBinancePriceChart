@@ -351,7 +351,10 @@
 								family: "'Poppins', sans-serif",
 							}
 						}
-					}
+					},
+					tooltip: { 
+			            enabled: false // add_2024年11月12日_デフォルトで表示されるポップアップをオフにする
+			        }
 				},
 				barThickness: 16 // ローソク足の幅をピクセルで設定	ここでグラフの線の太さを決める
 			};
@@ -371,7 +374,52 @@
 						*/
 					}],
 				},
-				options: chartOptions
+				options: chartOptions,
+				// add_start_2024年11月12日_ポップアップを日本語にする
+				plugins: [
+                    {
+                    	// ツールチップの設定をここで行う
+                        afterDraw: chart => {
+                            if (chart.tooltip?._active && chart.tooltip?._active.length) {
+                                const ctx = chart.ctx;
+                                const activePoint = chart.tooltip._active[0];
+                                const x = activePoint.element.x;
+                                const y = activePoint.element.y;
+                                const dataPoint = chart.data.datasets[activePoint.datasetIndex].data[activePoint.index];
+
+								// 日本語のラベルと値を表示
+                                const tooltipText = [
+                                    `日時: ${new Date(dataPoint.x).toLocaleString()}`,
+                                    `始値: ¥${dataPoint.o.toLocaleString()}`,
+                                    `高値: ¥${dataPoint.h.toLocaleString()}`,
+                                    `安値: ¥${dataPoint.l.toLocaleString()}`,
+                                    `終値: ¥${dataPoint.c.toLocaleString()}`,
+                                ];
+
+                                let maxWidth = 0;
+                                tooltipText.forEach(line => {
+                                    maxWidth = Math.max(maxWidth, ctx.measureText(line).width);
+                                });
+
+								// ツールチップの背景を描画
+                                ctx.save();
+                                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                                ctx.fillRect(x + 10, y - tooltipText.length * 15, maxWidth + 20, tooltipText.length * 15+ 15);	// 行が見切れるので、最後の引数に15足した
+                                ctx.restore();
+
+								// ラベルと値を描画
+                                ctx.save();
+                                ctx.font = '10px Poppins';
+                                ctx.fillStyle = '#fff';
+                                tooltipText.forEach((line, index) => {
+                                    ctx.fillText(line, x + 15, y - (tooltipText.length - 1 - index) * 15);
+                                });
+                                ctx.restore();
+                            }
+                        }
+                    }
+                ]
+                // add_end_2024年11月12日_ポップアップを日本語にする
 			});
 
 			// 通貨ペアの選択変更イベント
