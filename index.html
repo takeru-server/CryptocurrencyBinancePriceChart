@@ -12,7 +12,10 @@
 	<!-- HTTPリクエストライブラリAxiosを読み込み -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js"></script>
 	<!-- Google Fontを読み込み -->
-	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+	<!-- <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"> -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic&display=swap" rel="stylesheet">
 	<!-- BootstrapのCSSを読み込み -->
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 	
@@ -292,6 +295,24 @@
 			}
 		}
 
+
+		// add_start_2024年11月13日_価格をフォーマットする関数
+		// 価格をフォーマットする関数
+		function formatPrice(price) {
+		    let formattedPrice;
+		    if (price >= 1000) {
+		        formattedPrice = price.toFixed(0); // 1000以上の場合は整数で表示
+		    } else if (price >= 1) {
+		        formattedPrice = price.toFixed(2); // 1以上の場合は少数点以下2桁まで表示
+		    } else {
+		        formattedPrice = price.toFixed(6); // 1未満の場合は少数点以下6桁まで表示
+		    }
+		    return Number(formattedPrice).toLocaleString() + ' 円'; // カンマ区切りを追加
+		}
+		// add_end_2024年11月13日_価格をフォーマットする関数
+		
+		
+		
 		/**
 		 * チャートを初期化する関数
 		 */
@@ -323,23 +344,8 @@
                             // }
                             
                             callback: function (value, index, values) {
-					          let formattedValue;
-
-					          // 1000以上の場合は整数で表示
-					          if (value >= 1000) {
-					            formattedValue = '¥' + value.toLocaleString();
-					          
-					          // 1以上の場合は少数点以下2桁まで表示
-					          } else if (value >= 1) {
-					            formattedValue = '¥' + value.toFixed(2);
-					            
-					          // 1未満の場合は少数点以下6桁まで表示
-					          } else {
-					            formattedValue = '¥' + value.toFixed(6);
-					          }
-
-					          return formattedValue;
-					        }
+			                    return formatPrice(value); // formatPrice関数を使用
+			                }
 					        // mod_end_2024年11月8日
                         }
 						}
@@ -348,7 +354,7 @@
 					legend: {
 						labels: {
 							font: {
-								family: "'Poppins', sans-serif",
+								family: "'BIZ UDPGothic', sans-serif",
 							}
 						}
 					},
@@ -382,39 +388,80 @@
                         afterDraw: chart => {
                             if (chart.tooltip?._active && chart.tooltip?._active.length) {
                                 const ctx = chart.ctx;
-                                const activePoint = chart.tooltip._active[0];
-                                const x = activePoint.element.x;
-                                const y = activePoint.element.y;
-                                const dataPoint = chart.data.datasets[activePoint.datasetIndex].data[activePoint.index];
+				                const activePoint = chart.tooltip._active[0];
+				                const x = activePoint.element.x;
+				                const y = activePoint.element.y;
+				                const dataPoint = chart.data.datasets[activePoint.datasetIndex].data[activePoint.index];
 
-								// 日本語のラベルと値を表示
-                                const tooltipText = [
-                                    `日時: ${new Date(dataPoint.x).toLocaleString()}`,
-                                    `始値: ¥${dataPoint.o.toLocaleString()}`,
-                                    `高値: ¥${dataPoint.h.toLocaleString()}`,
-                                    `安値: ¥${dataPoint.l.toLocaleString()}`,
-                                    `終値: ¥${dataPoint.c.toLocaleString()}`,
-                                ];
+				                // グラフの描画領域の幅を取得
+				                const chartWidth = chart.chartArea.right - chart.chartArea.left;
 
-                                let maxWidth = 0;
-                                tooltipText.forEach(line => {
-                                    maxWidth = Math.max(maxWidth, ctx.measureText(line).width);
-                                });
+				                // ツールチップのテキストを作成
+				                const tooltipText = [
+				                    `日時: ${new Date(dataPoint.x).toLocaleString()}`,
+								    `始値: ${formatPrice(dataPoint.o)}`,
+								    `高値: ${formatPrice(dataPoint.h)}`,
+								    `安値: ${formatPrice(dataPoint.l)}`,
+								    `終値: ${formatPrice(dataPoint.c)}`,
+				                ];
 
-								// ツールチップの背景を描画
-                                ctx.save();
-                                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                                ctx.fillRect(x + 10, y - tooltipText.length * 15, maxWidth + 20, tooltipText.length * 15+ 15);	// 行が見切れるので、最後の引数に15足した
-                                ctx.restore();
+				                // ツールチップの最大幅を計算
+				                let maxWidth = 0;
+				                tooltipText.forEach(line => {
+				                    maxWidth = Math.max(maxWidth, ctx.measureText(line).width);
+				                });
 
-								// ラベルと値を描画
-                                ctx.save();
-                                ctx.font = '10px Poppins';
-                                ctx.fillStyle = '#fff';
-                                tooltipText.forEach((line, index) => {
-                                    ctx.fillText(line, x + 15, y - (tooltipText.length - 1 - index) * 15);
-                                });
-                                ctx.restore();
+				                // ツールチップのx座標を計算
+				                let tooltipX = x + 10; // デフォルトは右側に表示
+				                if (x > chartWidth / 2 + chart.chartArea.left) { // グラフの右半分をクリックした場合
+				                    tooltipX = x - maxWidth - 30; // 左側に表示
+				                }
+
+				                // 三角形のx座標を計算
+				                let triangleX = tooltipX - 8; // デフォルトはツールチップの左端から少し右（５～１０くらいの間で、値が大きい方が吹き出しの三角形が大きくなる）
+				                if (x > chartWidth / 2 + chart.chartArea.left) {  // グラフの右半分をクリックした場合
+				                    triangleX = tooltipX + maxWidth + 28; // ツールチップの右端（２５～３０くらいの間で、値が大きい方が吹き出しの三角形が大きくなる）
+				                }
+				                
+				                // ツールチップのy座標を計算 (画面上部で切れないように調整)
+					            let tooltipY = y;
+					            const tooltipHeight = tooltipText.length * 15; // ツールチップの高さ
+					            if (tooltipY - tooltipHeight < 0) { // 画面上部で切れる場合
+					                tooltipY = tooltipHeight;    // 下に移動
+					            }
+					            
+
+				                // ツールチップの背景と三角形を描画
+				                ctx.save();
+				                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+				                ctx.beginPath();
+				                ctx.moveTo(tooltipX, tooltipY - tooltipHeight); // y座標をtooltipYに変更
+					            ctx.lineTo(tooltipX + maxWidth + 20, tooltipY - tooltipHeight); // y座標をtooltipYに変更
+					            ctx.lineTo(tooltipX + maxWidth + 20, tooltipY + 15); // y座標をtooltipYに変更
+					            ctx.lineTo(tooltipX, tooltipY + 15); // y座標をtooltipYに変更
+				                ctx.closePath();
+				                
+				                ctx.fill(); // 背景を描画
+
+				                // 三角形を描画
+				                ctx.beginPath();
+				                ctx.moveTo(triangleX, tooltipY); // y座標をtooltipYに変更
+				                // マウスカーソルがグラフの右半分にある場合は左向きの三角形、そうでない場合は右向きの三角形
+				                ctx.lineTo(triangleX + (x > chartWidth / 2 + chart.chartArea.left ? -10 : 10), y + 5);
+				                ctx.lineTo(triangleX + (x > chartWidth / 2 + chart.chartArea.left ? -10 : 10), y - 5);
+				                ctx.closePath();
+				                ctx.fill();
+				                ctx.restore();
+
+				                // ツールチップのテキストを描画
+				                ctx.save();
+				                // ctx.font = '10px Poppins';
+				                ctx.font = '10px BIZ UDPGothic';
+				                ctx.fillStyle = '#fff';
+				                tooltipText.forEach((line, index) => {
+				                    ctx.fillText(line, tooltipX + 15, tooltipY - (tooltipText.length - 1 - index) * 15); // y座標をtooltipYに変更
+				                });
+				                ctx.restore();
                             }
                         }
                     }
@@ -452,7 +499,7 @@
 			const symbolText = selectedOption.text;
 			document.getElementById('chart-title').textContent = `${symbolText} Price Chart`;
 		}
-
+		
 		// チャートの初期化
 		initChart();
 
