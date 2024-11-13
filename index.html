@@ -301,13 +301,13 @@
 		function formatPrice(price) {
 		    let formattedPrice;
 		    if (price >= 1000) {
-		        formattedPrice = price.toFixed(0); // 1000以上の場合は整数で表示
+		        formattedPrice = Number(price.toFixed(0)).toLocaleString(); // 1000以上の場合は整数で表示
 		    } else if (price >= 1) {
 		        formattedPrice = price.toFixed(2); // 1以上の場合は少数点以下2桁まで表示
 		    } else {
 		        formattedPrice = price.toFixed(6); // 1未満の場合は少数点以下6桁まで表示
 		    }
-		    return Number(formattedPrice).toLocaleString() + ' 円'; // カンマ区切りを追加
+		    return formattedPrice + ' 円'; // カンマ区切りを追加
 		}
 		// add_end_2024年11月13日_価格をフォーマットする関数
 		
