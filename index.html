@@ -426,8 +426,8 @@
 				                // ツールチップのy座標を計算 (画面上部で切れないように調整)
 					            let tooltipY = y;
 					            const tooltipHeight = tooltipText.length * 15; // ツールチップの高さ
-					            if (tooltipY - tooltipHeight < 0) { // 画面上部で切れる場合
-					                tooltipY = tooltipHeight;    // 下に移動
+					            if (tooltipY - tooltipHeight < 0) {	// 画面上部で切れる場合
+					                tooltipY = tooltipHeight;		// 下に移動
 					            }
 					            
 
@@ -447,8 +447,8 @@
 				                ctx.beginPath();
 				                ctx.moveTo(triangleX, tooltipY); // y座標をtooltipYに変更
 				                // マウスカーソルがグラフの右半分にある場合は左向きの三角形、そうでない場合は右向きの三角形
-				                ctx.lineTo(triangleX + (x > chartWidth / 2 + chart.chartArea.left ? -10 : 10), y + 5);
-				                ctx.lineTo(triangleX + (x > chartWidth / 2 + chart.chartArea.left ? -10 : 10), y - 5);
+				                ctx.lineTo(triangleX + (x > chartWidth / 2 + chart.chartArea.left ? -15 : 10), y + 5);
+				                ctx.lineTo(triangleX + (x > chartWidth / 2 + chart.chartArea.left ? -15 : 10), y - 5);
 				                ctx.closePath();
 				                ctx.fill();
 				                ctx.restore();
